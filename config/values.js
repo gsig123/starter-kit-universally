@@ -5,7 +5,12 @@
  * absolute paths should be resolved during runtime by our build internal/server.
  */
 
+import path from 'path';
+import fs from 'fs';
+import appRootDir from 'app-root-dir';
+
 import * as EnvVars from './utils/envVars';
+import CliVar from './utils/cliVar';
 
 function apiUrl() {
   const herokuAppName = EnvVars.string('HEROKU_APP_NAME');
@@ -38,6 +43,10 @@ const values = {
     polyfillIO: true,
     // We need to expose all the htmlPage settings.
     helmet: true,
+    // Google Analytics is initialized on the client.
+    gaId: true,
+    // Expose heroku devtools flag
+    herokuDevtools: true,
   },
 
   // The public facing url of the app
@@ -58,13 +67,21 @@ const values = {
   // This is an example environment variable which is used within the react
   // application to demonstrate the usage of environment variables across
   // the client and server bundles.
-  welcomeMessage: EnvVars.string('WELCOME_MSG', 'Hello world!'),
+  welcomeMessage: EnvVars.string('WELCOME_MSG', 'Nothing feels like ::ffff!'),
 
   // Expose environment
   NODE_ENV: EnvVars.string('NODE_ENV', 'development'),
 
+  // Are we measuring performance?
+  performance: EnvVars.bool('PERFORMANCE', false),
+
   // Enable node-notifier?
   notifier: EnvVars.string('NOTIFIER', 'warn'),
+
+  // Toggle devtools on heroku
+  herokuDevtools: EnvVars.bool('HEROKU_DEVTOOLS', false),
+
+  passwordProtect: EnvVars.string('PASSWORD_PROTECT', ''),
 
   // Disable server side rendering?
   disableSSR: false,
@@ -75,6 +92,15 @@ const values = {
   // We are using the "ms" format to set the length.
   // @see https://www.npmjs.com/package/ms
   browserCacheMaxAge: '365d',
+
+  // Enforce HTTPS when behind a load balancer/external router (e.g. Heroku)
+  // redirects all requests to their https counterparts
+  enforceHttps: EnvVars.bool('ENFORCE_HTTPS', false),
+
+  // Analytics properties
+  gaId: EnvVars.string('GA_ID', ''),
+  facebookPixel: EnvVars.string('FACEBOOK_PIXEL', ''),
+  twitterPixel: EnvVars.string('TWITTER_PIXEL', ''),
 
   // We use the polyfill.io service which provides the polyfills that a
   // client needs, which is far more optimal than the large output
@@ -157,15 +183,23 @@ const values = {
     connectSrc: ['ws:', 'swapi.co'],
     defaultSrc: [],
     fontSrc: ['fonts.googleapis.com/css', 'fonts.gstatic.com'],
-    imgSrc: [],
+    imgSrc: [
+      '*.facebook.com',
+      '*.google-analytics.com',
+      't.co',
+    ],
     mediaSrc: [],
     manifestSrc: [],
     objectSrc: [],
     scriptSrc: [
-      "'self' 'unsafe-inline' 'unsafe-eval'",
-      // Allow scripts from cdn.polyfill.io so that we can import the
-      // polyfill.
+      "'self'",
+      // Allow scripts from cdn.polyfill.io so that we can import the polyfill.
       'cdn.polyfill.io',
+      // For analytics
+      '*.google-analytics.com',
+      'connect.facebook.net',
+      'static.ads-twitter.com',
+      'analytics.twitter.com',
     ],
     styleSrc: [
       "'self' 'unsafe-inline'",
@@ -298,6 +332,7 @@ const values = {
           'react-jobs',
           'react',
           'react-dom',
+          'react-ga',
           'react-helmet',
           'react-router-dom',
           'mobx',
@@ -397,6 +432,9 @@ const values = {
       // eslint-disable-next-line no-unused-vars
       const { target, mode } = buildOptions;
 
+      // we assume resolve to be an object with an `alias` object we can add to
+      const { resolve } = webpackConfig;
+
       // Example:
       /*
       if (target === 'server' && mode === 'development') {
@@ -410,6 +448,29 @@ const values = {
         console.log(JSON.stringify(webpackConfig, null, 4));
       }
       */
+
+      // Hook up possible single route development
+      const route = CliVar('route');
+      if (mode === 'development' && route) {
+        const routePath = path.resolve(appRootDir.get(), `shared/routes/${route}`);
+
+        // we can call sync function here since it's only in development
+        const routeIsValid = route && route !== '' && fs.existsSync(routePath);
+
+        if (routeIsValid) {
+          const resolvedApp = path.resolve(appRootDir.get(), 'shared/SingleRouteApp');
+
+          resolve.alias.route = routePath;
+          resolve.alias.App = resolvedApp;
+
+          console.info(`==> Routing all requests to the "${route}" route`);
+        } else {
+          console.warn(`Unable to resolve route "${route}" at ${routePath}`);
+          resolve.alias.App = path.resolve(appRootDir.get(), 'shared/MainApp');
+        }
+      } else {
+        resolve.alias.App = path.resolve(appRootDir.get(), 'shared/MainApp');
+      }
 
       return webpackConfig;
     },
