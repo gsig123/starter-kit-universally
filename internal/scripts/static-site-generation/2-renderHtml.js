@@ -9,20 +9,22 @@ import { remove, outputFile } from 'fs-extra';
 import superagent from 'superagent';
 import _ from 'lodash';
 import path from 'path';
-import routeConfig from '../../../build/static/temp/routes.json';
+import url from 'url';
+import getRouteConfig from './getRouteConfig';
 import config from '../../../config';
 
-// this import actually launches the server as well as providing a reference to it
+// this import actually launches the server as well as providing a reference to it. The file
+// is built by the prepare script in this directory so that must be run first.
 import server from '../../../build/static/temp/index';
 
-
+const routeConfig = getRouteConfig();
 const rootDir = appRootDir.get();
 const outputDir = path.join(rootDir, config('buildOutputPath'), 'static');
 const tempDir = path.join(outputDir, 'temp');
 
 function renderRouteToHtmlFile({ source, destination, ignoreGetError }) {
   return superagent
-    .get(`http://localhost:3000/${source}`)
+    .get(url.resolve('http://localhost:3000', source))
     // if we're generating an expected error route (e.g. the 404 page)
     // we should ignore the error and use the response on the error
     .catch((err) => {

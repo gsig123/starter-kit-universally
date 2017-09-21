@@ -13,16 +13,18 @@ target directory of `build/static/client'
 * The `public` directory is copied directly to `build/static`
 * A temporary production server bundle is created in `build/static/temp`
 * Another node bundle is created for the reactApp as a standalone. 
-* NOT YET IMPLEMENTED: A node script instantiates the reactApp and exports the
-non-dynamic routes to a `build/static/temp/routeConfig.json` (today we just
-specify the routes in values.js). 
+* A node script instantiates the reactApp and traverses the
+children to discover routes and their paths.
 * finally the temporary server bundle is launched and we issue http requests
 to the specified routes and write the files to the file system.
 
 ## Why it's a two-part build
 
 The current structure of `server/index.js` has it launching the server, so importing
-it into a script cannot be done until it's built. Rather than refactoring `server/index.js`, a less invasive
-approach was taken. The first script: `1-prepare.js` produces the client and server bundles and
-generates the routeConfig.json file.  The second script,  `2-renderHtml.js` launches the server
+it into a script cannot be done until it's built. Rather than refactoring `server/index.js` or messing around
+with webpack dynamic imports, I took a simpler approach. 
+
+The first script: `1-prepare.js` produces the client and server bundles and
+generates the bundle that will allow the routes to be discovered. The second script,  
+`2-renderHtml.js` loads the MainApp to discover the route paths and then launches the server
 and executes the http requests & writes the html files. 

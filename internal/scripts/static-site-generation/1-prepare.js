@@ -2,7 +2,7 @@ import path from 'path';
 import webpack from 'webpack';
 import appRootDir from 'app-root-dir';
 import _ from 'lodash';
-import { copy, remove, outputJson } from 'fs-extra';
+import { copy, remove } from 'fs-extra';
 import colors from 'colors/safe';
 import config from '../../../config';
 import configFactory from '../../webpack/configFactory';
@@ -55,37 +55,17 @@ function compileClient() {
   return runWebpackCompiler(webpack(webpackConfig));
 }
 
-async function generateRouteConfig() {
-  const { allIndex, routes } = config('staticSiteGeneration');
-  const { basePaths, ignoredPaths, customRoutes } = routes;
-
-  const basePathsToUse = _.filter(basePaths, basePath => !_.includes(ignoredPaths, basePath));
-  const baseConfigs = _.map(basePathsToUse, (routePath) => {
-    let destination;
-    if (routePath === '') {
-      destination = 'index.html';
-    } else {
-      destination = allIndex ? `${routePath}/index.html` : `${routePath}.html`;
-    }
-    return { source: routePath, destination };
-  });
-  const allRoutes = _.concat(baseConfigs, customRoutes);
-  const outputFileName = path.join(tempOutputDir, 'routes.json');
-  await outputJson(outputFileName, allRoutes, { spaces: 2 });
-}
-
 let failed = false;
 remove(outputDir)
   .then(copyPublicDir)
   .then(compileServer)
   .then(compileClient)
-  .then(generateRouteConfig)
   .then(() => {
-    console.log(colors.green(`SUCCESS: static site generated in ${outputDir}`));
+    console.log(colors.green(`SUCCESS: bundles for static site written to ${outputDir}`));
   })
   .catch((err) => {
     console.error(err);
-    console.error(colors.red('ERROR while generating static site'));
+    console.error(colors.red('ERROR while compiling bundles'));
     failed = true;
   })
   .then(() => {
