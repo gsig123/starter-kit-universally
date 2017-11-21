@@ -16,6 +16,9 @@
   },
   "environments": {
     "test": {
+      "scripts": {
+        "test": "npm run test && npm run test:cypress"
+      },
       "env": {
         "NODE_ENV": "test"
       }
