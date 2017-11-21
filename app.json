@@ -17,11 +17,16 @@
   "environments": {
     "test": {
       "scripts": {
-        "test": "npm run test && npm run test:cypress"
+        "test": "npm run test && npm run   test:cypress"
       },
       "env": {
         "NODE_ENV": "test"
-      }
+      },
+      "buildpacks": [
+        { "url": "heroku/nodejs" },
+        { "url": "https://github.com/heroku/heroku-buildpack-apt" }
+      ],
+      "stack": "cedar-14"
     }
   },
   "formation": {
