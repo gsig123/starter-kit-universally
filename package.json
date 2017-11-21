@@ -27,7 +27,8 @@
     "stylelint": "stylelint \"shared/**/*.scss\" --syntax scss",
     "test": "npm run lint",
     "test-fails-on-herou": "jest --setupTestFrameworkScriptFile ./shared/setupTests.js",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:cypress": "cypress run"
   },
   "repository": {
     "type": "git",
@@ -102,6 +103,7 @@
     "compression": "1.7.0",
     "cross-env": "5.0.5",
     "css-loader": "0.28.7",
+    "cypress": "^1.1.0",
     "dotenv": "4.0.0",
     "enzyme": "3.0.0",
     "enzyme-adapter-react-16": "1.0.0",
@@ -132,8 +134,8 @@
     "prop-types": "15.5.10",
     "react": "16.0.0",
     "react-async-bootstrapper": "1.1.2",
-    "react-dom": "16.0.0",
     "react-async-component": "1.0.2",
+    "react-dom": "16.0.0",
     "react-ga": "2.2.0",
     "react-helmet": "5.2.0",
     "react-hot-loader": "3.0.0-beta.6",
@@ -162,8 +164,8 @@
     "@ueno/eslint-config": "1.2.4",
     "@ueno/stylelint-config": "1.0.4",
     "babel-eslint": "7.2.3",
-    "enzyme-to-json": "3.0.1",
     "babel-jest": "21.0.2",
+    "enzyme-to-json": "3.0.1",
     "eslint": "4.9.0",
     "fs-extra": "4.0.2",
     "husky": "0.14.3",
